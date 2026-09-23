@@ -85,8 +85,14 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
   }
 
   // Reproduz a música selecionada com codificação por segmento
+  // Reproduz a música selecionada com feedback visual instantâneo
   Future<void> _playTrack(int index) async {
     if (index < 0 || index >= _playlist.length) return;
+
+    // 1. Atualiza o estado da interface IMEDIATAMENTE ao clicar
+    setState(() {
+      _currentIndex = index;
+    });
 
     final relativePath = _playlist[index];
 
@@ -104,10 +110,6 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
       await _player.stop();
       await _player.setUrl(fullUrl);
       await _player.play();
-
-      setState(() {
-        _currentIndex = index;
-      });
     } catch (e) {
       print('❌ Erro no just_audio: $e');
       _showError('Erro ao tocar áudio: $e');
@@ -161,61 +163,63 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
         },
       ),
       bottomNavigationBar: _currentIndex != -1
-          ? Container(
-        color: Colors.grey[900],
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    _playlist[_currentIndex].split('/').last,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  Text(
-                    _playlist[_currentIndex],
-                    style: const TextStyle(fontSize: 10, color: Colors.grey),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
+          ? SafeArea(
+        child: Container(
+          color: Colors.grey[900],
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _playlist[_currentIndex].split('/').last,
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    Text(
+                      _playlist[_currentIndex],
+                      style: const TextStyle(fontSize: 10, color: Colors.grey),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
               ),
-            ),
-            IconButton(
-              icon: const Icon(Icons.skip_previous),
-              onPressed: _currentIndex > 0
-                  ? () => _playTrack(_currentIndex - 1)
-                  : null,
-            ),
-            StreamBuilder<PlayerState>(
-              stream: _player.playerStateStream,
-              builder: (context, snapshot) {
-                final playerState = snapshot.data;
-                final playing = playerState?.playing ?? false;
-                return IconButton(
-                  icon: Icon(playing ? Icons.pause : Icons.play_arrow),
-                  onPressed: () {
-                    if (playing) {
-                      _player.pause();
-                    } else {
-                      _player.play();
-                    }
-                  },
-                );
-              },
-            ),
-            IconButton(
-              icon: const Icon(Icons.skip_next),
-              onPressed: _currentIndex < _playlist.length - 1
-                  ? () => _playTrack(_currentIndex + 1)
-                  : null,
-            ),
-          ],
+              IconButton(
+                icon: const Icon(Icons.skip_previous),
+                onPressed: _currentIndex > 0
+                    ? () => _playTrack(_currentIndex - 1)
+                    : null,
+              ),
+              StreamBuilder<PlayerState>(
+                stream: _player.playerStateStream,
+                builder: (context, snapshot) {
+                  final playerState = snapshot.data;
+                  final playing = playerState?.playing ?? false;
+                  return IconButton(
+                    icon: Icon(playing ? Icons.pause : Icons.play_arrow),
+                    onPressed: () {
+                      if (playing) {
+                        _player.pause();
+                      } else {
+                        _player.play();
+                      }
+                    },
+                  );
+                },
+              ),
+              IconButton(
+                icon: const Icon(Icons.skip_next),
+                onPressed: _currentIndex < _playlist.length - 1
+                    ? () => _playTrack(_currentIndex + 1)
+                    : null,
+              ),
+            ],
+          ),
         ),
       )
           : null,
